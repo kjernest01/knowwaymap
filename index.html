@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoJSON Display</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+    <!-- <script src="https://unpkg.com/pmtiles@latest/leaflet.js"></script> -->
+    <script src="https://unpkg.com/pmtiles@latest/dist/leaflet.pmtiles.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f8;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            justify-content: center;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 2rem;
+            color: #333;
+        }
+
+        label {
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 1rem;
+        }
+
+        select, button {
+            padding: 10px 15px;
+            font-size: 1rem;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        select {
+            background-color: #ffffff;
+            color: #333;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #load-geojson {
+            background-color: #28a745;
+            color: white;
+        }
+
+        #load-geojson:hover {
+            background-color: #218838;
+        }
+
+        #load-all {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        #load-all:hover {
+            background-color: #c82333;
+        }
+
+        #map {
+            margin-top: 20px;
+            width: 80%;
+            height: 60vh;
+            background-color: #e0e0e0;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>GeoJSON Display</h1>
+
+    <label for="geojson-select">Select GeoJSON File:</label>
+    <select id="geojson-select">
+        <option value="boston_building">Boston Building</option>
+        <option value="boston_place">Boston Place</option>
+        <option value="boston_division">Boston Division</option>
+        <option value="boston_segment">Boston Segment</option>
+        <option value="boston_address">Boston Address</option>
+    </select>
+    
+    <button id="load-geojson">Load GeoJSON</button>
+    <br>
+    <button id="load-all">Load ALL</button>
+    <div id="map"></div>
+
+    <script>
+
+        const map = L.map('map').setView([42.3601, -71.0589], 13);
+
+        L.tileLayer('./tiles/boston_base.pmtiles', { maxZoom: 19, }).addTo(map)
+
+        document.getElementById('load-geojson').addEventListener('click', () => {
+                const selectedFile = document.getElementById('geojson-select').value;
+
+               
+                    fetch(`/geojson/${selectedFile}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        map.eachLayer(layer => {
+                            if (layer instanceof L.GeoJSON) {
+                                map.removeLayer(layer);
+                            }
+                        });
+                        L.geoJSON(data).addTo(map);
+                    })
+                    .catch(error => console.error('Error fetching GeoJSON:', error));
+                
+            });
+
+            document.getElementById('load-all').addEventListener('click', () => {
+                const selectedFile = ["boston_building", "boston_division", "boston_segment"];
+
+                selectedFile.forEach(sf => {
+                    fetch(`/geojson/${sf}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        L.geoJSON(data).addTo(map);
+                    })
+                    .catch(error => console.error('Error fetching GeoJSON:', error));
+                })
+            });
+
+        // Initialize the map
+        // const map = L.map('map').setView([42.3601, -71.0589], 13); // Centered on Boston
+
+        // Load PMTiles layer
+        // const pmTilesLayer = new L.PMTilesLayer('./tiles/boston_base.pmtiles', {
+        //     opacity: 0.6, // Adjust opacity as needed
+        //     maxZoom: 19   // Set max zoom level
+        // });
+        // pmTilesLayer.addTo(map);
+
+
+        // basemap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+        }).addTo(map);
+
+        // const pmtiles_list = ["address", "building", "division", "place", "segment"]
+        // // layer pmtiles onto map
+
+        // let overlayLayers = {};
+
+        // pmtiles_list.forEach(pmtile => {
+        // overlayLayers["building"] = new L.PMTiles(`./tiles/boston_base.pmtiles`, {
+        //     opacity: 0.6 // Adjust opacity as needed
+        // })
+
+        // overlayLayers["building"].addTo(map);
+
+        // console.log(overlayLayers)
+        // });
+
+        // L.control.layers(null, overlayLayers).addTo(map);
+
+        // const pmtilesLayer1 = new L.PMTiles(`./GeoJson/boston_${test}.geojson`, {
+        //     opacity: 0.6 // Adjust opacity as needed
+        // });
+        // pmtilesLayer1.addTo(map);
+    </script>
+</body>
+
+
+
+</html>
+
+
